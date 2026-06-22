@@ -265,25 +265,11 @@ function showBanner(el, msg) {
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function getStoreUrl() {
-  const ua = navigator.userAgent;
-  if (/iphone|ipad|ipod/i.test(ua)) return 'https://apps.apple.com/app/tribe';
-  if (/android/i.test(ua))          return 'https://play.google.com/store/apps/details?id=com.tribe.app';
-  return 'https://tribeapp.co';
-}
-
-function getStoreLabel() {
-  const ua = navigator.userAgent;
-  if (/iphone|ipad|ipod/i.test(ua)) return '📱 Télécharger sur l\'App Store';
-  if (/android/i.test(ua))          return '▶ Télécharger sur Google Play';
-  return '🌐 Découvrir Tribe';
-}
-
 function showSuccess(club, isAuto) {
-  const page = document.getElementById('page');
+  const page  = document.getElementById('page');
   const title = isAuto ? `Bienvenue dans ${esc(club.name)} !` : 'Demande envoyée !';
   const sub   = isAuto
-    ? `Tu es maintenant membre de <strong>${esc(club.name)}</strong>. Télécharge l'app pour accéder à ton espace.`
+    ? `Tu es maintenant membre de <strong>${esc(club.name)}</strong>.`
     : `L'organisateur examinera ta demande. Tu recevras un email de confirmation lorsqu'elle sera acceptée.`;
 
   page.innerHTML = `
@@ -296,7 +282,10 @@ function showSuccess(club, isAuto) {
         Télécharge l'app pour accéder à ton espace membre, voir les événements,
         rejoindre les canaux de discussion et bien plus encore.
       </div>
-      <a href="${getStoreUrl()}" class="app-btn">${getStoreLabel()}</a>
+      <a href="https://tribeapp.co" class="app-btn">📱 Découvrir Tribe</a>
+      <p style="font-size:12px;color:#AEAEB2;margin-top:4px;">
+        L'app arrive bientôt sur l'App Store &amp; Google Play
+      </p>
     </div>
   `;
 }
