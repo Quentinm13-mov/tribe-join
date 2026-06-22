@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rejoindre le club — Tribe</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #F2F2F7;
+      min-height: 100vh;
+      color: #1C1C1E;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: 480px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 12px; }
+    .card { background: white; border-radius: 20px; padding: 28px 24px; }
+
+    /* Club header */
+    .club-head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+    .logo-img  { width: 72px; height: 72px; border-radius: 18px; object-fit: cover; }
+    .logo-emoji{ width: 72px; height: 72px; border-radius: 18px; background: #F2F2F7; font-size: 40px; display: flex; align-items: center; justify-content: center; }
+    .club-name { font-size: 22px; font-weight: 700; }
+    .club-meta { font-size: 14px; color: #8E8E93; }
+    .club-desc { font-size: 14px; color: #3C3C43; line-height: 1.5; }
+    .mode-badge{ font-size: 12px; padding: 4px 12px; border-radius: 20px; background: #F2F2F7; color: #636366; font-weight: 500; }
+
+    /* Form */
+    .form-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #8E8E93; margin-bottom: 20px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: #3C3C43; margin-bottom: 6px; }
+    .req { color: #FF3B30; }
+    .field input {
+      width: 100%; height: 48px; background: #F2F2F7; border: none; border-radius: 10px;
+      padding: 0 14px; font-size: 16px; font-family: inherit; color: #1C1C1E;
+      outline: none; -webkit-appearance: none; appearance: none;
+    }
+    .field input:focus { box-shadow: 0 0 0 2px rgba(0,122,255,0.4); }
+    .choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .chip-label input[type=radio] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .chip {
+      display: inline-block; padding: 8px 16px; border-radius: 100px;
+      border: 1.5px solid #E5E5EA; font-size: 14px; font-weight: 500;
+      color: #1C1C1E; cursor: pointer; user-select: none; transition: all 0.12s;
+    }
+    .chip-label input[type=radio]:checked ~ .chip { background: #1C1C1E; border-color: #1C1C1E; color: white; }
+    .error-banner { background: #FFF0F0; border-radius: 12px; padding: 12px 16px; color: #CC0000; font-size: 14px; margin-bottom: 16px; }
+    .submit-btn {
+      width: 100%; height: 52px; background: #1C1C1E; color: white; border: none;
+      border-radius: 14px; font-size: 16px; font-weight: 700; font-family: inherit;
+      cursor: pointer; margin-top: 8px; transition: opacity 0.15s; display: flex;
+      align-items: center; justify-content: center; gap: 8px;
+    }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Loading skeleton */
+    .skeleton { background: #E5E5EA; border-radius: 10px; animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    /* Success */
+    .success-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 16px 0; }
+    .success-icon { font-size: 64px; }
+    .success-title { font-size: 24px; font-weight: 700; }
+    .success-sub { font-size: 15px; color: #636366; line-height: 1.55; }
+    .app-btn {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 12px;
+      padding: 14px 28px; background: #1C1C1E; color: white; border-radius: 14px;
+      font-size: 15px; font-weight: 700; text-decoration: none;
+    }
+
+    /* Spinner */
+    .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="page" id="page">
+  <!-- Skeleton while loading -->
+  <div class="card club-head" id="club-skeleton">
+    <div class="skeleton" style="width:72px;height:72px;border-radius:18px;"></div>
+    <div class="skeleton" style="width:160px;height:22px;border-radius:6px;margin-top:4px;"></div>
+    <div class="skeleton" style="width:100px;height:16px;border-radius:6px;"></div>
+  </div>
+  <div class="card" id="form-skeleton">
+    <div class="skeleton" style="width:140px;height:12px;border-radius:4px;margin-bottom:20px;"></div>
+    <div class="skeleton" style="width:100%;height:48px;border-radius:10px;margin-bottom:12px;"></div>
+    <div class="skeleton" style="width:100%;height:48px;border-radius:10px;margin-bottom:12px;"></div>
+    <div class="skeleton" style="width:100%;height:48px;border-radius:10px;margin-bottom:20px;"></div>
+    <div class="skeleton" style="width:100%;height:52px;border-radius:14px;"></div>
+  </div>
+</div>
+
+<script>
+// ─── Config ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://bgqyszbufnpdgcaskddv.supabase.co';
+const ANON_KEY      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJncXlzemJ1Zm5wZGdjYXNrZGR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NDA1NDUsImV4cCI6MjA5NzExNjU0NX0.Ret-8-Rk6bowIY7NiKIRU8rTUvz-weRT9h7bX5Q_CXo';
+const FUNCTION_URL  = `${SUPABASE_URL}/functions/v1/join-club`;
+const REST_HEADERS  = { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` };
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function logoHtml(club) {
+  const url = club.logo_url;
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+    return `<img src="${esc(url)}" class="logo-img" alt="${esc(club.name)}">`;
+  }
+  return `<div class="logo-emoji">${esc(url ?? '🏃')}</div>`;
+}
+
+function renderFieldInput(f) {
+  const name  = `field_${f.id}`;
+  const label = `${esc(f.label)}${f.is_required ? ' <span class="req">*</span>' : ''}`;
+  const req   = f.is_required ? ' required' : '';
+
+  if (f.field_type === 'choice') {
+    const opts = Array.isArray(f.options) ? f.options : [];
+    const chips = opts.map(o =>
+      `<label class="chip-label">
+        <input type="radio" name="${esc(name)}"${req} value="${esc(o)}">
+        <span class="chip">${esc(o)}</span>
+      </label>`
+    ).join('');
+    return `<div class="field"><label>${label}</label><div class="choices">${chips}</div></div>`;
+  }
+
+  const type = f.field_type === 'phone' ? 'tel' : 'text';
+  const ph   = f.field_type === 'phone' ? '06 12 34 56 78'
+             : f.field_type === 'birthdate' ? 'JJ/MM/AAAA'
+             : f.field_type === 'city' ? 'Paris, Lyon…' : '';
+
+  return `<div class="field">
+    <label for="${esc(name)}">${label}</label>
+    <input type="${type}" id="${esc(name)}" name="${esc(name)}" placeholder="${esc(ph)}"${req}>
+  </div>`;
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+async function init() {
+  const slug = new URLSearchParams(location.search).get('slug');
+  if (!slug) { showError('Lien invalide — aucun slug de club spécifié.'); return; }
+
+  // Fetch club + fields in parallel
+  const [clubRes, fieldsRes] = await Promise.all([
+    fetch(`${SUPABASE_URL}/rest/v1/clubs?slug=eq.${encodeURIComponent(slug)}&select=id,name,slug,logo_url,city,description,admission_mode&limit=1`, { headers: REST_HEADERS }),
+    fetch(`${SUPABASE_URL}/rest/v1/clubs?slug=eq.${encodeURIComponent(slug)}&select=id&limit=1`, { headers: REST_HEADERS }),
+  ]);
+
+  const clubs = await clubRes.json();
+  if (!clubs.length) { showError(`Aucun club trouvé avec le slug « ${esc(slug)} ».`); return; }
+  const club = clubs[0];
+
+  const fieldsData = await fetch(
+    `${SUPABASE_URL}/rest/v1/admission_form_fields?club_id=eq.${club.id}&order=position&select=*`,
+    { headers: REST_HEADERS }
+  );
+  const fields = (await fieldsData.json()).filter(f => f.field_type !== 'photo');
+
+  renderPage(club, fields);
+}
+
+function renderPage(club, fields) {
+  const page = document.getElementById('page');
+
+  const modeLabel = club.admission_mode === 'auto'
+    ? '✅ Admission automatique'
+    : '⏳ Admission sur validation';
+
+  const dynamicFields = fields.map(renderFieldInput).join('');
+
+  page.innerHTML = `
+    <div class="card club-head">
+      ${logoHtml(club)}
+      <div class="club-name">${esc(club.name)}</div>
+      ${club.city ? `<div class="club-meta">📍 ${esc(club.city)}</div>` : ''}
+      ${club.description ? `<div class="club-desc">${esc(club.description)}</div>` : ''}
+      <div class="mode-badge">${modeLabel}</div>
+    </div>
+
+    <div id="error-banner" class="error-banner" style="display:none;"></div>
+
+    <form id="admission-form" class="card" novalidate>
+      <div class="form-title">Formulaire d'admission</div>
+
+      <div class="field">
+        <label for="first_name">Prénom <span class="req">*</span></label>
+        <input type="text" id="first_name" name="first_name" required autocomplete="given-name" autocapitalize="words">
+      </div>
+      <div class="field">
+        <label for="last_name">Nom</label>
+        <input type="text" id="last_name" name="last_name" autocomplete="family-name" autocapitalize="words">
+      </div>
+      <div class="field">
+        <label for="email">Email <span class="req">*</span></label>
+        <input type="email" id="email" name="email" required autocomplete="email" inputmode="email">
+      </div>
+
+      ${dynamicFields}
+
+      <button type="submit" class="submit-btn" id="submit-btn">
+        ${club.admission_mode === 'auto' ? 'Rejoindre le club' : 'Envoyer ma demande'}
+      </button>
+    </form>
+  `;
+
+  document.getElementById('admission-form').addEventListener('submit', (e) => handleSubmit(e, club, fields));
+}
+
+async function handleSubmit(e, club, fields) {
+  e.preventDefault();
+  const form   = e.target;
+  const btn    = document.getElementById('submit-btn');
+  const banner = document.getElementById('error-banner');
+
+  // Client-side validation
+  const get = (name) => (form.elements[name]?.value ?? '').trim();
+  if (!get('first_name') || !get('email')) {
+    showBanner(banner, 'Le prénom et l\'email sont obligatoires.');
+    return;
+  }
+  for (const f of fields) {
+    if (f.is_required && !get(`field_${f.id}`)) {
+      showBanner(banner, `Le champ « ${f.label} » est obligatoire.`);
+      return;
+    }
+  }
+
+  banner.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  // Build JSON payload
+  const payload = { first_name: get('first_name'), last_name: get('last_name'), email: get('email') };
+  for (const f of fields) payload[`field_${f.id}`] = get(`field_${f.id}`);
+
+  try {
+    const res = await fetch(`${FUNCTION_URL}?slug=${encodeURIComponent(club.slug)}&api=1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      showBanner(banner, data.error ?? `Erreur ${res.status}`);
+      btn.disabled = false;
+      btn.textContent = club.admission_mode === 'auto' ? 'Rejoindre le club' : 'Envoyer ma demande';
+      return;
+    }
+
+    showSuccess(club, data.status === 'active');
+  } catch (err) {
+    showBanner(banner, 'Erreur réseau. Vérifie ta connexion et réessaie.');
+    btn.disabled = false;
+    btn.textContent = club.admission_mode === 'auto' ? 'Rejoindre le club' : 'Envoyer ma demande';
+  }
+}
+
+function showBanner(el, msg) {
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function getStoreUrl() {
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return 'https://apps.apple.com/app/tribe';
+  if (/android/i.test(ua))          return 'https://play.google.com/store/apps/details?id=com.tribe.app';
+  return 'https://tribeapp.co';
+}
+
+function getStoreLabel() {
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return '📱 Télécharger sur l\'App Store';
+  if (/android/i.test(ua))          return '▶ Télécharger sur Google Play';
+  return '🌐 Découvrir Tribe';
+}
+
+function showSuccess(club, isAuto) {
+  const page = document.getElementById('page');
+  const title = isAuto ? `Bienvenue dans ${esc(club.name)} !` : 'Demande envoyée !';
+  const sub   = isAuto
+    ? `Tu es maintenant membre de <strong>${esc(club.name)}</strong>. Télécharge l'app pour accéder à ton espace.`
+    : `L'organisateur examinera ta demande. Tu recevras un email de confirmation lorsqu'elle sera acceptée.`;
+
+  page.innerHTML = `
+    <div class="card success-wrap">
+      <div class="success-icon">${isAuto ? '🎉' : '✅'}</div>
+      <div class="success-title">${title}</div>
+      <div class="success-sub">${sub}</div>
+      <div class="success-sub" style="margin-top:8px;font-size:14px;color:#8E8E93;">
+        ${esc(club.name)} est sur Tribe, la plateforme des clubs sportifs urbains.
+        Télécharge l'app pour accéder à ton espace membre, voir les événements,
+        rejoindre les canaux de discussion et bien plus encore.
+      </div>
+      <a href="${getStoreUrl()}" class="app-btn">${getStoreLabel()}</a>
+    </div>
+  `;
+}
+
+function showError(msg) {
+  document.getElementById('page').innerHTML = `
+    <div class="card success-wrap">
+      <div class="success-icon">🔍</div>
+      <div class="success-title">Oups</div>
+      <div class="success-sub">${msg}</div>
+    </div>
+  `;
+}
+
+init().catch(err => showError('Erreur de chargement. Réessaie dans quelques instants.'));
+</script>
+</body>
+</html>
