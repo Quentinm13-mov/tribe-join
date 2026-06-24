@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boutique — Tribe</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #F2F2F7;
+      min-height: 100vh;
+      color: #1C1C1E;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: 480px; margin: 0 auto; padding: 32px 16px 80px; display: flex; flex-direction: column; gap: 16px; }
+    .card { background: white; border-radius: 20px; padding: 24px; }
+
+    /* ─── Club header ───────────────────────────────────────── */
+    .club-head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+    .logo-img   { width: 72px; height: 72px; border-radius: 18px; object-fit: cover; }
+    .logo-emoji { width: 72px; height: 72px; border-radius: 18px; background: #F2F2F7; font-size: 40px; display: flex; align-items: center; justify-content: center; }
+    .club-name  { font-size: 22px; font-weight: 700; }
+    .club-meta  { font-size: 14px; color: #8E8E93; }
+    .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #8E8E93; margin-bottom: 4px; }
+
+    /* ─── Products grid ─────────────────────────────────────── */
+    .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .product-card {
+      background: white; border-radius: 16px; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .product-photo { width: 100%; aspect-ratio: 1; object-fit: cover; background: #F2F2F7; }
+    .product-photo-ph { width: 100%; aspect-ratio: 1; background: #F2F2F7; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+    .product-info { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .product-title { font-size: 14px; font-weight: 600; color: #1C1C1E; line-height: 1.3; }
+    .product-price { font-size: 16px; font-weight: 700; color: #1C1C1E; }
+    .product-category { font-size: 11px; color: #8E8E93; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+    .sizes-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    .size-chip {
+      font-size: 11px; font-weight: 600; padding: 3px 8px;
+      border-radius: 6px; background: #F2F2F7; color: #3C3C43;
+    }
+    .size-chip.out { background: #F2F2F7; color: #C7C7CC; text-decoration: line-through; }
+
+    /* ─── Empty / loading ───────────────────────────────────── */
+    .skeleton { background: #E5E5EA; border-radius: 10px; animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .empty { text-align: center; padding: 40px 0; color: #8E8E93; font-size: 14px; }
+
+    /* ─── CTA ───────────────────────────────────────────────── */
+    .cta-card { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+    .cta-title { font-size: 16px; font-weight: 700; }
+    .cta-sub { font-size: 13px; color: #8E8E93; line-height: 1.5; }
+    .cta-btn {
+      width: 100%; height: 52px; background: #1C1C1E; color: white; border: none;
+      border-radius: 14px; font-size: 16px; font-weight: 700; font-family: inherit;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      text-decoration: none; transition: opacity 0.15s;
+    }
+    .cta-btn:hover { opacity: 0.85; }
+
+    /* ─── Error ─────────────────────────────────────────────── */
+    .error-card { text-align: center; color: #CC0000; font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="page" id="page">
+  <!-- Loading skeleton -->
+  <div class="card">
+    <div class="club-head">
+      <div class="skeleton" style="width:72px;height:72px;border-radius:18px;"></div>
+      <div class="skeleton" style="width:160px;height:22px;border-radius:8px;"></div>
+      <div class="skeleton" style="width:100px;height:16px;border-radius:6px;"></div>
+    </div>
+  </div>
+  <div>
+    <div class="skeleton" style="width:80px;height:14px;border-radius:6px;margin-bottom:12px;"></div>
+    <div class="products-grid">
+      <div class="product-card"><div class="skeleton" style="width:100%;aspect-ratio:1;"></div><div style="padding:12px;display:flex;flex-direction:column;gap:8px;"><div class="skeleton" style="height:16px;border-radius:6px;"></div><div class="skeleton" style="height:20px;width:60%;border-radius:6px;"></div></div></div>
+      <div class="product-card"><div class="skeleton" style="width:100%;aspect-ratio:1;"></div><div style="padding:12px;display:flex;flex-direction:column;gap:8px;"><div class="skeleton" style="height:16px;border-radius:6px;"></div><div class="skeleton" style="height:20px;width:60%;border-radius:6px;"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Config ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://bgqyszbufnpdgcaskddv.supabase.co';
+const ANON_KEY      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJncXlzemJ1Zm5wZGdjYXNrZGR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NDA1NDUsImV4cCI6MjA5NzExNjU0NX0.Ret-8-Rk6bowIY7NiKIRU8rTUvz-weRT9h7bX5Q_CXo';
+const REST_HEADERS  = { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` };
+const APPSTORE_URL  = 'https://tribeapp.co';
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function logoHtml(club) {
+  const url = club.logo_url;
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+    return `<img src="${esc(url)}" class="logo-img" alt="${esc(club.name)}">`;
+  }
+  return `<div class="logo-emoji">${esc(club.emoji ?? '🏃')}</div>`;
+}
+
+const SIZE_ORDER = ['XS','S','M','L','XL','XXL'];
+function sortSizes(entries) {
+  return [...entries].sort(([a],[b]) => {
+    const ai = SIZE_ORDER.indexOf(a.toUpperCase());
+    const bi = SIZE_ORDER.indexOf(b.toUpperCase());
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    const na = parseFloat(a), nb = parseFloat(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a.localeCompare(b);
+  });
+}
+
+function formatPrice(cents) {
+  if (cents === 0) return 'Gratuit';
+  return (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+}
+
+function renderProduct(item) {
+  const photo = Array.isArray(item.photos) && item.photos[0]
+    ? `<img src="${esc(item.photos[0])}" class="product-photo" alt="${esc(item.title)}" loading="lazy">`
+    : `<div class="product-photo-ph">👕</div>`;
+
+  const sizes = item.sizes_stock && typeof item.sizes_stock === 'object'
+    ? sortSizes(Object.entries(item.sizes_stock))
+    : [];
+  const sizesHtml = sizes.length > 0
+    ? `<div class="sizes-row">${sizes.map(([s, qty]) =>
+        `<span class="size-chip${qty <= 0 ? ' out' : ''}">${esc(s)}</span>`
+      ).join('')}</div>`
+    : '';
+
+  return `
+    <div class="product-card">
+      ${photo}
+      <div class="product-info">
+        ${item.category ? `<span class="product-category">${esc(item.category)}</span>` : ''}
+        <span class="product-title">${esc(item.title)}</span>
+        <span class="product-price">${formatPrice(item.price_cents)}</span>
+        ${sizesHtml}
+      </div>
+    </div>`;
+}
+
+async function init() {
+  const slug = new URLSearchParams(location.search).get('slug');
+  if (!slug) { showError('Lien invalide — aucun slug de club spécifié.'); return; }
+
+  const [clubRes, itemsRes] = await Promise.all([
+    fetch(
+      `${SUPABASE_URL}/rest/v1/clubs?slug=eq.${encodeURIComponent(slug)}&select=id,name,logo_url,emoji,city&limit=1`,
+      { headers: REST_HEADERS }
+    ),
+    fetch(
+      `${SUPABASE_URL}/rest/v1/clubs?slug=eq.${encodeURIComponent(slug)}&select=id&limit=1`,
+      { headers: REST_HEADERS }
+    ),
+  ]);
+
+  const clubs = await clubRes.json();
+  if (!clubs.length) { showError(`Aucun club trouvé avec le slug « ${esc(slug)} ».`); return; }
+  const club = clubs[0];
+
+  document.title = `Boutique ${club.name} — Tribe`;
+
+  const shopRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/shop_items?club_id=eq.${encodeURIComponent(club.id)}&status=eq.active&select=id,title,description,price_cents,photos,sizes_stock,category&order=created_at.desc`,
+    { headers: REST_HEADERS }
+  );
+  const items = await shopRes.json();
+
+  const productsHtml = Array.isArray(items) && items.length > 0
+    ? `<div class="products-grid">${items.map(renderProduct).join('')}</div>`
+    : `<div class="empty">La boutique est vide pour le moment.</div>`;
+
+  document.getElementById('page').innerHTML = `
+    <div class="card">
+      <div class="club-head">
+        ${logoHtml(club)}
+        <span class="club-name">${esc(club.name)}</span>
+        ${club.city ? `<span class="club-meta">${esc(club.city)}</span>` : ''}
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Produits disponibles</div>
+      ${productsHtml}
+    </div>
+
+    <div class="card">
+      <div class="cta-card">
+        <span class="cta-title">Commander sur l'app Tribe</span>
+        <span class="cta-sub">Télécharge l'application pour commander et suivre ta commande directement depuis ton club.</span>
+        <a href="${esc(APPSTORE_URL)}" class="cta-btn">📱 Télécharger Tribe</a>
+      </div>
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById('page').innerHTML = `<div class="card error-card">${esc(msg)}</div>`;
+}
+
+init().catch(e => showError(e.message));
+</script>
+</body>
+</html>
