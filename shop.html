@@ -169,7 +169,7 @@ async function init() {
   document.title = `Boutique ${club.name} — Tribe`;
 
   const shopRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/shop_items?club_id=eq.${encodeURIComponent(club.id)}&status=eq.active&select=id,title,description,price_cents,photos,sizes_stock,category&order=created_at.desc`,
+    `${SUPABASE_URL}/rest/v1/shop_items?club_id=eq.${encodeURIComponent(club.id)}&is_active=eq.true&select=id,title,description,price_cents,photos,sizes_stock,category&order=created_at.desc`,
     { headers: REST_HEADERS }
   );
   const items = await shopRes.json();
