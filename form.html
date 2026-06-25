@@ -251,23 +251,10 @@ function renderFieldInput(f) {
   const name  = `field_${f.id}`;
   const label = `${esc(f.label)}${f.is_required ? ' <span class="req">*</span>' : ''}`;
   const req   = f.is_required ? ' required' : '';
-
-  if (f.field_type === 'choice') {
-    const opts = Array.isArray(f.options) ? f.options : [];
-    const chips = opts.map(o =>
-      `<label class="chip-label">
-        <input type="radio" name="${esc(name)}"${req} value="${esc(o)}">
-        <span class="chip">${esc(o)}</span>
-      </label>`
-    ).join('');
-    return `<div class="field"><label>${label}</label><div class="choices">${chips}</div></div>`;
-  }
-
-  const type = f.field_type === 'phone' ? 'tel' : 'text';
-  const ph   = f.field_type === 'phone' ? '06 12 34 56 78'
-             : f.field_type === 'birthdate' ? 'JJ/MM/AAAA'
-             : f.field_type === 'city' ? 'Paris, Lyon…' : '';
-
+  const type  = f.field_type === 'phone' ? 'tel' : 'text';
+  const ph    = f.field_type === 'phone' ? '06 12 34 56 78'
+              : f.field_type === 'birthdate' ? 'JJ/MM/AAAA'
+              : f.field_type === 'city' ? 'Paris, Lyon…' : '';
   return `<div class="field">
     <label for="${esc(name)}">${label}</label>
     <input type="${type}" id="${esc(name)}" name="${esc(name)}" placeholder="${esc(ph)}"${req}>
@@ -278,22 +265,16 @@ function renderFieldInput(f) {
 async function fetchClubStats(clubId) {
   const now = new Date().toISOString();
   try {
-    const [mRes, eRes] = await Promise.all([
-      fetch(
-        `${SUPABASE_URL}/rest/v1/club_members?club_id=eq.${clubId}&status=eq.active&select=id`,
-        { headers: { ...REST_HEADERS, 'Prefer': 'count=exact' } }
-      ),
-      fetch(
-        `${SUPABASE_URL}/rest/v1/events?club_id=eq.${clubId}&start_at=gt.${encodeURIComponent(now)}&select=id`,
-        { headers: { ...REST_HEADERS, 'Prefer': 'count=exact' } }
-      ),
-    ]);
+    const eRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/events?club_id=eq.${clubId}&start_at=gt.${encodeURIComponent(now)}&select=id`,
+      { headers: { ...REST_HEADERS, 'Prefer': 'count=exact' } }
+    );
     function parseCount(res) {
       const range = res.headers.get('Content-Range') ?? '';
       const n = parseInt((range.split('/')[1] ?? '').trim(), 10);
       return isNaN(n) ? null : n;
     }
-    return [parseCount(mRes), parseCount(eRes)];
+    return [null, parseCount(eRes)];
   } catch {
     return [null, null];
   }
@@ -455,10 +436,6 @@ function showSuccess(club, isAuto, email) {
         ${club.description ? `<div class="hero-desc">${esc(club.description)}</div>` : ''}
         <div class="stats-row">
           <div class="stat-card">
-            <div class="stat-value" id="stat-members"><div class="stat-skel"></div></div>
-            <div class="stat-label">membres actifs</div>
-          </div>
-          <div class="stat-card">
             <div class="stat-value" id="stat-events"><div class="stat-skel"></div></div>
             <div class="stat-label">events à venir</div>
           </div>
@@ -581,11 +558,9 @@ function showSuccess(club, isAuto, email) {
   `;
 
   // Load stats asynchronously
-  fetchClubStats(club.id).then(([memberCount, eventCount]) => {
-    const mEl = document.getElementById('stat-members');
+  fetchClubStats(club.id).then(([, eventCount]) => {
     const eEl = document.getElementById('stat-events');
-    if (mEl) mEl.textContent = memberCount !== null ? memberCount.toString() : '—';
-    if (eEl) eEl.textContent = eventCount  !== null ? eventCount.toString()  : '—';
+    if (eEl) eEl.textContent = eventCount !== null ? eventCount.toString() : '—';
   });
 }
 
