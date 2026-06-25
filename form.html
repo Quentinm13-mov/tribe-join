@@ -311,8 +311,6 @@ function renderPage(club, fields) {
     ? '✅ Admission automatique'
     : '⏳ Admission sur validation';
 
-  const dynamicFields = fields.map(renderFieldInput).join('');
-
   page.innerHTML = `
     <div class="card club-head">
       ${logoHtml(club, false)}
@@ -340,13 +338,21 @@ function renderPage(club, fields) {
         <input type="email" id="email" name="email" required autocomplete="email" inputmode="email">
       </div>
 
-      ${dynamicFields}
+      <div id="dynamic-fields"></div>
 
       <button type="submit" class="submit-btn" id="submit-btn">
         ${club.admission_mode === 'auto' ? 'Rejoindre le club' : 'Envoyer ma demande'}
       </button>
     </form>
   `;
+
+  // Insert dynamic fields via DOM after innerHTML (avoids template-literal breakage on field content)
+  console.log('[form] inserting dynamic fields:', fields.length);
+  const dynEl = document.getElementById('dynamic-fields');
+  if (dynEl) {
+    dynEl.innerHTML = fields.map(renderFieldInput).join('');
+    console.log('[form] dynamic-fields innerHTML length:', dynEl.innerHTML.length);
+  }
 
   document.getElementById('admission-form').addEventListener('submit', (e) => handleSubmit(e, club, fields));
 }
