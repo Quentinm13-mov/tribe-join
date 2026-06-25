@@ -297,7 +297,9 @@ async function init() {
     `${SUPABASE_URL}/rest/v1/admission_form_fields?club_id=eq.${club.id}&order=position&select=*`,
     { headers: REST_HEADERS }
   );
-  const fields = (await fieldsData.json()).filter(f => f.field_type !== 'photo');
+  const fieldsRaw = await fieldsData.json();
+  console.log('[form] admission_form_fields response:', JSON.stringify(fieldsRaw));
+  const fields = Array.isArray(fieldsRaw) ? fieldsRaw.filter(f => f.field_type !== 'photo') : [];
 
   renderPage(club, fields);
 }
