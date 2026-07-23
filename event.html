@@ -124,6 +124,21 @@
     <!-- Event content (hidden while loading) -->
     <div id="content" style="display:none"></div>
 
+    <!-- Desktop download section (shown by openApp() on non-mobile) -->
+    <div id="download-section" style="display:none; padding: 0 16px;">
+      <div class="card" style="display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center; padding:28px 24px;">
+        <div style="font-size:40px;">📱</div>
+        <div>
+          <div style="font-size:17px; font-weight:700; margin-bottom:6px;">Télécharge l'app Tribe pour participer</div>
+          <div style="font-size:14px; color:#8E8E93; line-height:1.5;">L'app est disponible sur iPhone et Android. Ouvre le lien depuis ton téléphone pour rejoindre directement l'événement.</div>
+        </div>
+        <div style="display:flex; gap:10px; width:100%;">
+          <a class="store-btn" href="https://apps.apple.com/app/id6784278561" style="flex:1;">🍎 App Store</a>
+          <a class="store-btn" href="https://play.google.com/store/apps/details?id=com.tribeapp.club" style="flex:1;">▶ Play Store</a>
+        </div>
+      </div>
+    </div>
+
     <!-- Error state (hidden by default) -->
     <div id="error" style="display:none">
       <div class="card error-card">
@@ -156,19 +171,24 @@
 
     function openApp() {
       const eventId = new URLSearchParams(window.location.search).get('id');
-      const deepLink = `tribe://event/${eventId}`;
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
       const isAndroid = /Android/.test(navigator.userAgent);
 
-      window.location.href = deepLink;
-
-      setTimeout(() => {
-        if (isIOS) {
+      if (isIOS) {
+        window.location.href = `tribe://event/${eventId}`;
+        setTimeout(() => {
           window.location.href = 'https://apps.apple.com/app/id6784278561';
-        } else if (isAndroid) {
+        }, 2000);
+      } else if (isAndroid) {
+        window.location.href = `tribe://event/${eventId}`;
+        setTimeout(() => {
           window.location.href = 'https://play.google.com/store/apps/details?id=com.tribeapp.club';
-        }
-      }, 2000);
+        }, 2000);
+      } else {
+        const section = document.getElementById('download-section');
+        section.style.display = 'block';
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
     }
 
     function render(event, club) {
