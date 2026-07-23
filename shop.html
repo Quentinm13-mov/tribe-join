@@ -89,6 +89,8 @@ const SUPABASE_URL  = 'https://bgqyszbufnpdgcaskddv.supabase.co';
 const ANON_KEY      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJncXlzemJ1Zm5wZGdjYXNrZGR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NDA1NDUsImV4cCI6MjA5NzExNjU0NX0.Ret-8-Rk6bowIY7NiKIRU8rTUvz-weRT9h7bX5Q_CXo';
 const REST_HEADERS  = { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` };
 const APPSTORE_URL  = 'https://tribeapp.co';
+// Storage — bucket name used at upload time (shop-admin.tsx: from('shop-photos'))
+const STORAGE_BUCKET = 'shop-photos';
 
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -121,9 +123,23 @@ function formatPrice(cents) {
   return (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 }
 
+// Normalize a photo value to a full public URL.
+// Handles three cases stored by the mobile app:
+//   1. Already a full https:// URL (getPublicUrl result)  → use as-is
+//   2. Relative path like "club-id/timestamp.jpg"         → prepend public storage URL
+//   3. null / undefined                                   → return null
+function resolvePhotoUrl(raw) {
+  if (!raw) return null;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${raw}`;
+}
+
 function renderProduct(item) {
-  const photo = Array.isArray(item.photos) && item.photos[0]
-    ? `<img src="${esc(item.photos[0])}" class="product-photo" alt="${esc(item.title)}" loading="lazy">`
+  const rawUrl = Array.isArray(item.photos) ? item.photos[0] : null;
+  const resolvedUrl = resolvePhotoUrl(rawUrl);
+  const photo = resolvedUrl
+    ? `<img src="${esc(resolvedUrl)}" class="product-photo" alt="${esc(item.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<div class="product-photo-ph" style="display:none">👕</div>`
     : `<div class="product-photo-ph">👕</div>`;
 
   const sizes = item.sizes_stock && typeof item.sizes_stock === 'object'
@@ -151,28 +167,42 @@ async function init() {
   const slug = new URLSearchParams(location.search).get('slug');
   if (!slug) { showError('Lien invalide — aucun slug de club spécifié.'); return; }
 
-  const [clubRes, itemsRes] = await Promise.all([
-    fetch(
-      `${SUPABASE_URL}/rest/v1/clubs?slug=eq.${encodeURIComponent(slug)}&select=id,name,logo_url,emoji,city&limit=1`,
-      { headers: REST_HEADERS }
-    ),
-    fetch(
-      `${SUPABASE_URL}/rest/v1/clubs?slug=eq.${encodeURIComponent(slug)}&select=id&limit=1`,
-      { headers: REST_HEADERS }
-    ),
-  ]);
-
+  // 1. Fetch club
+  const clubRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/clubs?slug=eq.${encodeURIComponent(slug)}&select=id,name,logo_url,emoji,city&limit=1`,
+    { headers: REST_HEADERS }
+  );
   const clubs = await clubRes.json();
+  console.log('[shop] clubs response:', clubs);
   if (!clubs.length) { showError(`Aucun club trouvé avec le slug « ${esc(slug)} ».`); return; }
   const club = clubs[0];
 
   document.title = `Boutique ${club.name} — Tribe`;
 
+  // 2. Fetch shop items
   const shopRes = await fetch(
     `${SUPABASE_URL}/rest/v1/shop_items?club_id=eq.${encodeURIComponent(club.id)}&is_active=eq.true&select=id,title,description,price_cents,photos,sizes_stock,category&order=created_at.desc`,
     { headers: REST_HEADERS }
   );
   const items = await shopRes.json();
+
+  // ── DEBUG: inspect photo URLs returned by Supabase ──────────────────────
+  console.log('[shop] shop_items raw response:', JSON.stringify(items, null, 2));
+  if (Array.isArray(items)) {
+    items.forEach((item, i) => {
+      const raw = Array.isArray(item.photos) ? item.photos : [];
+      const resolved = raw.map(resolvePhotoUrl);
+      console.log(`[shop] item[${i}] "${item.title}"`, {
+        photos_raw: raw,
+        photos_resolved: resolved,
+        storage_bucket: STORAGE_BUCKET,
+        expected_prefix: `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/`,
+      });
+    });
+  } else {
+    console.warn('[shop] items is not an array — RLS issue or empty result:', items);
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   const productsHtml = Array.isArray(items) && items.length > 0
     ? `<div class="products-grid">${items.map(renderProduct).join('')}</div>`
