@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Événement — Tribe</title>
+  <meta name="description" content="Rejoins la sortie sur Tribe">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #F2F2F7;
+      min-height: 100vh;
+      color: #1C1C1E;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Layout ─────────────────────────────────────────────── */
+    .page { max-width: 480px; margin: 0 auto; padding: 0 0 80px; display: flex; flex-direction: column; gap: 12px; }
+    .card { background: white; border-radius: 20px; padding: 20px; }
+
+    /* ─── Cover photo ───────────────────────────────────────── */
+    .cover {
+      width: 100%; aspect-ratio: 16/9; object-fit: cover;
+      border-radius: 0 0 20px 20px;
+    }
+    .cover-placeholder {
+      width: 100%; aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #E5E5EA 0%, #D1D1D6 100%);
+      border-radius: 0 0 20px 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+    }
+
+    /* ─── Club badge ────────────────────────────────────────── */
+    .club-badge {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; background: white; border-radius: 14px;
+      margin: 12px 16px 0;
+    }
+    .club-logo-img   { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; }
+    .club-logo-emoji { width: 40px; height: 40px; border-radius: 10px; background: #F2F2F7; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+    .club-badge-info { flex: 1; }
+    .club-badge-name { font-size: 14px; font-weight: 700; color: #1C1C1E; }
+    .club-badge-label { font-size: 12px; color: #8E8E93; margin-top: 1px; }
+
+    /* ─── Event info card ───────────────────────────────────── */
+    .event-card { padding: 20px; margin: 0 16px; }
+    .event-type-badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 3px 10px; border-radius: 20px;
+      background: #F2F2F7; color: #636366; margin-bottom: 10px;
+    }
+    .event-title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; color: #1C1C1E; }
+    .event-meta { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+    .meta-row { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #3C3C43; }
+    .meta-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+    .meta-text { line-height: 1.4; }
+
+    /* ─── Description ───────────────────────────────────────── */
+    .event-desc {
+      font-size: 14px; color: #3C3C43; line-height: 1.6;
+      margin: 16px 0 0; white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* ─── CTA buttons ───────────────────────────────────────── */
+    .cta-zone { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+    .btn-primary {
+      display: block; width: 100%; height: 54px;
+      background: #1C1C1E; color: white; border: none;
+      border-radius: 16px; font-size: 16px; font-weight: 700;
+      font-family: inherit; cursor: pointer; text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:active { opacity: 0.8; }
+    .btn-accent {
+      display: flex; width: 100%; height: 50px;
+      color: #1C1C1E; background: white; border: none;
+      border-radius: 16px; font-size: 15px; font-weight: 600;
+      font-family: inherit; cursor: pointer; text-decoration: none;
+      align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .btn-accent:active { opacity: 0.7; }
+    .store-links { display: flex; gap: 10px; margin-top: 2px; }
+    .store-btn {
+      flex: 1; height: 44px; border-radius: 12px;
+      background: #F2F2F7; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      color: #1C1C1E; display: flex; align-items: center; justify-content: center; gap: 6px;
+      text-decoration: none; transition: opacity 0.15s;
+    }
+    .store-btn:active { opacity: 0.7; }
+    .store-note { font-size: 12px; color: #8E8E93; text-align: center; }
+
+    /* ─── Skeleton ──────────────────────────────────────────── */
+    .skeleton { background: #E5E5EA; border-radius: 10px; animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .skel-cover { width: 100%; aspect-ratio: 16/9; border-radius: 0 0 20px 20px; }
+    .skel-line { height: 14px; border-radius: 7px; margin-bottom: 10px; }
+
+    /* ─── Error ─────────────────────────────────────────────── */
+    .error-card { margin: 40px 16px; padding: 24px; text-align: center; }
+    .error-icon { font-size: 40px; margin-bottom: 12px; }
+    .error-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .error-text { font-size: 14px; color: #8E8E93; }
+
+    /* ─── Header ────────────────────────────────────────────── */
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 0; }
+    .logo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #1C1C1E; }
+    .logo span { opacity: 0.3; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="logo">Tribe<span>.</span></div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading">
+      <div class="skeleton skel-cover"></div>
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="skeleton skel-line" style="width: 40%"></div>
+        <div class="skeleton skel-line" style="width: 80%; height: 22px"></div>
+        <div class="skeleton skel-line" style="width: 60%"></div>
+        <div class="skeleton skel-line" style="width: 50%"></div>
+      </div>
+    </div>
+
+    <!-- Event content (hidden while loading) -->
+    <div id="content" style="display:none"></div>
+
+    <!-- Error state (hidden by default) -->
+    <div id="error" style="display:none">
+      <div class="card error-card">
+        <div class="error-icon">🔍</div>
+        <div class="error-title">Événement introuvable</div>
+        <div class="error-text">Ce lien est peut-être expiré ou l'événement a été supprimé.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://bgqyszbufnpdgcaskddv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJncXlzemJ1Zm5wZGdjYXNrZGR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NDA1NDUsImV4cCI6MjA5NzExNjU0NX0.Ret-8-Rk6bowIY7NiKIRU8rTUvz-weRT9h7bX5Q_CXo';
+
+    const TYPE_LABEL = { sortie: 'Sortie', entrainement: 'Entraînement', competition: 'Compétition' };
+    const LEVEL_LABEL = { beginner: 'Débutant', intermediate: 'Intermédiaire', advanced: 'Avancé', all: 'Tous niveaux' };
+
+    function formatDate(iso) {
+      return new Intl.DateTimeFormat('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+        timeZone: 'Europe/Paris'
+      }).format(new Date(iso));
+    }
+
+    function formatTime(iso) {
+      return new Intl.DateTimeFormat('fr-FR', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris'
+      }).format(new Date(iso));
+    }
+
+    function openApp(eventId) {
+      const deepLink = 'tribe://event/' + eventId;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      // Fallback to store if app not installed (fires after 1.5s if no app response)
+      const storeUrl = isIOS
+        ? 'https://apps.apple.com/app/tribe/id6742576165'
+        : 'https://play.google.com/store/apps/details?id=com.tribeapp.club';
+      const fallback = setTimeout(() => { window.location.href = storeUrl; }, 1500);
+      window.addEventListener('blur', () => clearTimeout(fallback), { once: true });
+      window.location.href = deepLink;
+    }
+
+    function render(event, club) {
+      const content = document.getElementById('content');
+      const accentColor = club.primary_color || '#1C1C1E';
+
+      const coverHtml = event.cover_url
+        ? `<img class="cover" src="${event.cover_url}" alt="${event.title}" loading="eager">`
+        : `<div class="cover-placeholder">${club.emoji || '🏃'}</div>`;
+
+      const clubLogoHtml = club.logo_url
+        ? `<img class="club-logo-img" src="${club.logo_url}" alt="${club.name}">`
+        : `<div class="club-logo-emoji">${club.emoji || '🏃'}</div>`;
+
+      const typeBadge = TYPE_LABEL[event.type] || event.type || '';
+      const levelText = event.level ? (LEVEL_LABEL[event.level] || event.level) : '';
+
+      const locationRow = event.location_name
+        ? `<div class="meta-row"><span class="meta-icon">📍</span><span class="meta-text">${event.location_name}</span></div>`
+        : '';
+      const levelRow = levelText
+        ? `<div class="meta-row"><span class="meta-icon">🎯</span><span class="meta-text">${levelText}</span></div>`
+        : '';
+      const descHtml = event.description
+        ? `<div class="event-desc">${event.description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
+        : '';
+
+      const joinClubUrl = `https://join.tribeapp.fr/form.html?slug=${club.slug}`;
+
+      content.innerHTML = `
+        ${coverHtml}
+
+        <div class="club-badge">
+          ${clubLogoHtml}
+          <div class="club-badge-info">
+            <div class="club-badge-name">${club.name}</div>
+            <div class="club-badge-label">Organisé par ce club</div>
+          </div>
+        </div>
+
+        <div class="card event-card">
+          ${typeBadge ? `<div class="event-type-badge">${typeBadge}</div>` : ''}
+          <div class="event-title">${event.title}</div>
+          <div class="event-meta">
+            <div class="meta-row">
+              <span class="meta-icon">📅</span>
+              <span class="meta-text">${formatDate(event.start_at)} à ${formatTime(event.start_at)}</span>
+            </div>
+            ${locationRow}
+            ${levelRow}
+          </div>
+          ${descHtml}
+        </div>
+
+        <div class="cta-zone">
+          <button
+            class="btn-primary"
+            style="background: ${accentColor}"
+            onclick="openApp('${event.id}')">
+            ✅ Je participe
+          </button>
+          <a class="btn-accent" href="${joinClubUrl}">
+            🏃 Rejoindre le club
+          </a>
+          <div class="store-note">Télécharge Tribe pour participer</div>
+          <div class="store-links">
+            <a class="store-btn" href="https://apps.apple.com/app/tribe/id6742576165">🍎 App Store</a>
+            <a class="store-btn" href="https://play.google.com/store/apps/details?id=com.tribeapp.club">▶ Play Store</a>
+          </div>
+        </div>
+      `;
+
+      document.title = `${event.title} — Tribe`;
+    }
+
+    async function load() {
+      const params = new URLSearchParams(location.search);
+      const eventId = params.get('id');
+
+      if (!eventId) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/events?id=eq.${encodeURIComponent(eventId)}&select=*,clubs(name,logo_url,slug,emoji,primary_color)`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY } }
+        );
+        const data = await res.json();
+        const event = data && data[0];
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (!event) {
+          document.getElementById('error').style.display = 'block';
+          return;
+        }
+
+        const club = event.clubs || {};
+        render(event, club);
+        document.getElementById('content').style.display = 'block';
+      } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
